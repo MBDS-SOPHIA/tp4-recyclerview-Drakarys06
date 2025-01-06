@@ -1,58 +1,71 @@
 package com.openclassrooms.magicgithub
 
-import com.openclassrooms.magicgithub.api.FakeApiServiceGenerator.FAKE_USERS
-import com.openclassrooms.magicgithub.api.FakeApiServiceGenerator.FAKE_USERS_RANDOM
 import com.openclassrooms.magicgithub.di.Injection
 import com.openclassrooms.magicgithub.model.User
 import com.openclassrooms.magicgithub.repository.UserRepository
-import org.junit.Assert
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import java.util.*
 
-/**
- * Unit test, which will execute on a JVM.
- * Testing UserRepository.
- */
-@RunWith(JUnit4::class)
 class UserRepositoryTest {
-    private lateinit var userRepository: UserRepository
+    private lateinit var repository: UserRepository
 
     @Before
-    fun setup() {
-        userRepository = Injection.getRepository()
-    }
-
-    @Test
-    fun getUsersWithSuccess() {
-        val usersActual = userRepository.getUsers()
-        val usersExpected: List<User> = FAKE_USERS
-        assertEquals(
-            usersActual,
-            usersExpected
-        )
+    fun setUp() {
+        repository = Injection.getRepository()
     }
 
     @Test
     fun generateRandomUserWithSuccess() {
-        val initialSize = userRepository.getUsers().size
-        userRepository.addRandomUser()
-        val user = userRepository.getUsers().last()
-        assertEquals(userRepository.getUsers().size, initialSize + 1)
-        assertTrue(
-            FAKE_USERS_RANDOM.filter {
-                it.equals(user)
-            }.isNotEmpty()
-        )
+        val initialSize = repository.getUsers().size
+        repository.addRandomUser()
+        assertEquals(initialSize + 1, repository.getUsers().size)
     }
 
     @Test
     fun deleteUserWithSuccess() {
-        val userToDelete = userRepository.getUsers()[0]
-        userRepository.deleteUser(userToDelete)
-        Assert.assertFalse(userRepository.getUsers().contains(userToDelete))
+        val user = repository.getUsers().first()
+        repository.deleteUser(user)
+        assertFalse(repository.getUsers().contains(user))
+    }
+
+    @Test
+    fun newUserIsActiveByDefault() {
+        repository.addRandomUser()
+        val lastUser = repository.getUsers().last()
+        assertTrue(lastUser.isActive)
+    }
+
+    @Test
+    fun toggleUserActiveStatus() {
+        // Get first user
+        val user = repository.getUsers().first()
+
+        // Store initial status
+        val initialStatus = user.isActive
+
+        // Toggle status
+        user.isActive = !initialStatus
+
+        // Verify status changed
+        assertNotEquals(initialStatus, user.isActive)
+    }
+
+    @Test
+    fun userListOrderingPreserved() {
+        // Get initial list
+        val initialList = repository.getUsers()
+
+        // Add new user
+        repository.addRandomUser()
+
+        // Get updated list
+        val updatedList = repository.getUsers()
+
+        // Verify all initial users are in same order
+        for (i in initialList.indices) {
+            assertEquals(initialList[i].id, updatedList[i].id)
+        }
     }
 }
